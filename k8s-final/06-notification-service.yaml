@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: smart-ticketing
+  labels:
+    app: notification-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      # Warten bis Kafka TCP-Port offen ist (zuverlaessiger als CLI-Check)
+      initContainers:
+        - name: wait-for-kafka
+          image: busybox:1.35
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z kafka 9092; do
+                echo "Warte auf Kafka..."
+                sleep 3
+              done
+      containers:
+        - name: notification-service
+          image: smart-ticketing/notification-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 3005
+          env:
+            - name: PORT
+              value: "3005"
+            - name: KAFKA_BROKER
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-ticketing-config
+                  key: KAFKA_BROKER
+          readinessProbe:
+            httpGet:
+              path: /notifications/health
+              port: 3005
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /notifications/health
+              port: 3005
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: smart-ticketing
+spec:
+  selector:
+    app: notification-service
+  ports:
+    - port: 3005
+      targetPort: 3005

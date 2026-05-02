@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: smart-ticketing
+  labels:
+    app: order-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+    spec:
+      initContainers:
+        - name: wait-for-event-service
+          image: busybox:1.35
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z event-service 3002; do
+                echo "Warte auf Event Service..."
+                sleep 2
+              done
+        - name: wait-for-notification-service
+          image: busybox:1.35
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z notification-service 3005; do
+                echo "Warte auf Notification Service..."
+                sleep 2
+              done
+      containers:
+        - name: order-service
+          image: smart-ticketing/order-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 3003
+          env:
+            - name: PORT
+              value: "3003"
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: smart-ticketing-secret
+                  key: JWT_SECRET
+            - name: KAFKA_BROKER
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-ticketing-config
+                  key: KAFKA_BROKER
+            - name: EVENT_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-ticketing-config
+                  key: EVENT_SERVICE_URL
+            - name: NOTIFICATION_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-ticketing-config
+                  key: NOTIFICATION_SERVICE_URL
+            - name: SERVICE_NAME
+              value: "order-service"
+          readinessProbe:
+            httpGet:
+              path: /orders/health/check
+              port: 3003
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /orders/health/check
+              port: 3003
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  namespace: smart-ticketing
+spec:
+  selector:
+    app: order-service
+  ports:
+    - port: 3003
+      targetPort: 3003

@@ -1,0 +1,10 @@
+{
+  "name": "smart-ticketing",
+  "version": "1.0.0",
+  "scripts": {
+    "install:all": "node build.js install",
+    "build":       "node build.js build",
+    "start":       "node start.js",
+    "setup":       "node build.js install && node build.js build && node start.js"
+  }
+}

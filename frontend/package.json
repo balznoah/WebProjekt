@@ -1,0 +1,7 @@
+{
+  "name": "smart-ticketing-frontend",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "npx http-server . -p 4200 -c-1 --cors -o"
+  }
+}

@@ -1,0 +1,115 @@
+version: '3.8'
+
+services:
+  # ─── Message Broker (Apache Kafka aus VL9) ───────────────────────────────
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    networks:
+      - ticketing-net
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    depends_on: [zookeeper]
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - ticketing-net
+
+  # ─── Microservices (NestJS aus VL4) ──────────────────────────────────────
+  auth-service:
+    build: ./auth-service
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      JWT_SECRET: dhbw-secret-2026
+    networks:
+      - ticketing-net
+
+  event-service:
+    build: ./event-service
+    ports:
+      - "3002:3002"
+    environment:
+      PORT: 3002
+      JWT_SECRET: dhbw-secret-2026
+    networks:
+      - ticketing-net
+
+  order-service:
+    build: ./order-service
+    ports:
+      - "3003:3003"
+    depends_on: [kafka, event-service]
+    environment:
+      PORT: 3003
+      JWT_SECRET: dhbw-secret-2026
+      KAFKA_BROKER: kafka:29092
+      EVENT_SERVICE_URL: http://event-service:3002
+    networks:
+      - ticketing-net
+
+  checkin-service:
+    build: ./checkin-service
+    ports:
+      - "3004:3004"
+    depends_on: [kafka, order-service]
+    environment:
+      PORT: 3004
+      JWT_SECRET: dhbw-secret-2026
+      KAFKA_BROKER: kafka:29092
+      ORDER_SERVICE_URL: http://order-service:3003
+    networks:
+      - ticketing-net
+
+  notification-service:
+    build: ./notification-service
+    ports:
+      - "3005:3005"
+    depends_on: [kafka]
+    environment:
+      PORT: 3005
+      KAFKA_BROKER: kafka:29092
+    networks:
+      - ticketing-net
+
+  # ─── API Gateway (aus Microservice-Referenzarchitektur VL8) ──────────────
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth-service
+      - event-service
+      - order-service
+      - checkin-service
+    environment:
+      PORT: 3000
+      JWT_SECRET: dhbw-secret-2026
+      AUTH_SERVICE_URL: http://auth-service:3001
+      EVENT_SERVICE_URL: http://event-service:3002
+      ORDER_SERVICE_URL: http://order-service:3003
+      CHECKIN_SERVICE_URL: http://checkin-service:3004
+    networks:
+      - ticketing-net
+
+  # ─── Angular Frontend (aus VL4 Angular) ──────────────────────────────────
+  frontend:
+    build: ./frontend
+    ports:
+      - "4200:80"
+    depends_on: [api-gateway]
+    networks:
+      - ticketing-net
+
+networks:
+  ticketing-net:
+    driver: bridge

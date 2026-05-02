@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Ticketing – DHBW</title>
+  <style>
+    /* ── CSS Reset & Variablen ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --dhbw-red:   #c8102e;
+      --dhbw-dark:  #1a1a2e;
+      --dhbw-grey:  #f4f4f4;
+      --accent:     #e94560;
+      --success:    #27ae60;
+      --warning:    #f39c12;
+      --danger:     #e74c3c;
+      --info:       #2980b9;
+      --card-bg:    #ffffff;
+      --text:       #2c2c2c;
+      --text-light: #666;
+      --border:     #e0e0e0;
+      --radius:     10px;
+      --shadow:     0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--dhbw-grey);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Navigation ────────────────────────────────────────────────────── */
+    nav {
+      background: var(--dhbw-dark);
+      color: white;
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+
+    .nav-brand .logo-box {
+      background: var(--dhbw-red);
+      width: 32px; height: 32px;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 0.8rem;
+    }
+
+    .nav-links { display: flex; gap: 0.25rem; }
+
+    .nav-links button {
+      background: transparent;
+      color: rgba(255,255,255,0.75);
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+
+    .nav-links button:hover,
+    .nav-links button.active {
+      background: rgba(255,255,255,0.12);
+      color: white;
+    }
+
+    .nav-user {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.8);
+    }
+
+    .badge-role {
+      background: var(--dhbw-red);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    /* ── Layout ─────────────────────────────────────────────────────────── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    /* ── Cards ──────────────────────────────────────────────────────────── */
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .card h2 { font-size: 1.1rem; color: var(--dhbw-dark); }
+    .card h3 { font-size: 1rem; margin-bottom: 0.5rem; }
+
+    /* ── Grid ────────────────────────────────────────────────────────────── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
+
+    @media (max-width: 768px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    }
+
+    /* ── Buttons ─────────────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.55rem 1.2rem;
+      border-radius: 7px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary   { background: var(--dhbw-red); color: white; }
+    .btn-primary:hover:not(:disabled)  { background: #a50d24; }
+    .btn-success   { background: var(--success); color: white; }
+    .btn-success:hover:not(:disabled)  { background: #1e8449; }
+    .btn-info      { background: var(--info); color: white; }
+    .btn-info:hover:not(:disabled)     { background: #1f618d; }
+    .btn-warning   { background: var(--warning); color: white; }
+    .btn-danger    { background: var(--danger); color: white; }
+    .btn-ghost     { background: transparent; color: var(--dhbw-red); border: 1.5px solid var(--dhbw-red); }
+    .btn-ghost:hover { background: var(--dhbw-red); color: white; }
+    .btn-sm        { padding: 0.35rem 0.8rem; font-size: 0.8rem; }
+    .btn-full      { width: 100%; justify-content: center; }
+
+    /* ── Forms ───────────────────────────────────────────────────────────── */
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.35rem; color: var(--text-light); }
+
+    .form-control {
+      width: 100%;
+      padding: 0.6rem 0.9rem;
+      border: 1.5px solid var(--border);
+      border-radius: 7px;
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+      background: white;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--dhbw-red);
+      box-shadow: 0 0 0 3px rgba(200,16,46,0.1);
+    }
+
+    select.form-control { cursor: pointer; }
+
+    /* ── Alerts ───────────────────────────────────────────────────────────── */
+    .alert {
+      padding: 0.85rem 1.1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    .alert-success { background: #d4edda; color: #155724; border-left: 4px solid var(--success); }
+    .alert-danger  { background: #f8d7da; color: #721c24; border-left: 4px solid var(--danger); }
+    .alert-info    { background: #d1ecf1; color: #0c5460; border-left: 4px solid var(--info); }
+    .alert-warning { background: #fff3cd; color: #856404; border-left: 4px solid var(--warning); }
+
+    /* ── Status Badges ────────────────────────────────────────────────────── */
+    .status-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .status-pending    { background: #fff3cd; color: #856404; }
+    .status-paid       { background: #d4edda; color: #155724; }
+    .status-checked_in { background: #cce5ff; color: #004085; }
+    .status-cancelled  { background: #f8d7da; color: #721c24; }
+
+    /* ── Event Card ────────────────────────────────────────────────────────── */
+    .event-card {
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      transition: all 0.2s;
+      background: white;
+    }
+    .event-card:hover { border-color: var(--dhbw-red); box-shadow: 0 4px 16px rgba(200,16,46,0.1); }
+    .event-card .event-date { color: var(--dhbw-red); font-size: 0.82rem; font-weight: 600; margin-bottom: 0.3rem; }
+    .event-card .event-name { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .event-card .event-location { color: var(--text-light); font-size: 0.85rem; margin-bottom: 0.75rem; }
+
+    /* Kategorien-Tabelle */
+    .categories { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.85rem; }
+    .categories th { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 2px solid var(--border); color: var(--text-light); font-size: 0.78rem; text-transform: uppercase; }
+    .categories td { padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border); }
+    .categories tr:last-child td { border-bottom: none; }
+    .avail-ok  { color: var(--success); font-weight: 600; }
+    .avail-low { color: var(--warning); font-weight: 600; }
+    .avail-no  { color: var(--danger);  font-weight: 600; }
+
+    /* ── QR Code Display ────────────────────────────────────────────────────── */
+    .qr-container {
+      text-align: center;
+      padding: 1.5rem;
+      background: var(--dhbw-grey);
+      border-radius: var(--radius);
+      margin: 0.75rem 0;
+    }
+    .qr-box {
+      display: inline-block;
+      background: white;
+      padding: 1rem;
+      border-radius: 8px;
+      border: 3px solid var(--dhbw-dark);
+      font-family: monospace;
+      font-size: 0.65rem;
+      word-break: break-all;
+      max-width: 200px;
+      color: var(--dhbw-dark);
+      letter-spacing: 1px;
+    }
+
+    /* ── Tabs ────────────────────────────────────────────────────────────── */
+    .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border); }
+    .tab-btn {
+      background: none; border: none; padding: 0.65rem 1.25rem;
+      cursor: pointer; font-size: 0.9rem; font-weight: 600;
+      color: var(--text-light); border-bottom: 2px solid transparent;
+      margin-bottom: -2px; transition: all 0.2s;
+    }
+    .tab-btn.active { color: var(--dhbw-red); border-bottom-color: var(--dhbw-red); }
+
+    /* ── Table ───────────────────────────────────────────────────────────── */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
+    .data-table th { text-align: left; padding: 0.6rem 0.8rem; background: var(--dhbw-grey); font-size: 0.78rem; text-transform: uppercase; color: var(--text-light); }
+    .data-table td { padding: 0.6rem 0.8rem; border-bottom: 1px solid var(--border); }
+    .data-table tr:hover td { background: #fafafa; }
+
+    /* ── Stats ────────────────────────────────────────────────────────────── */
+    .stat-card {
+      background: white;
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      text-align: center;
+      border: 1.5px solid var(--border);
+    }
+    .stat-card .stat-value { font-size: 2rem; font-weight: 800; color: var(--dhbw-red); }
+    .stat-card .stat-label { font-size: 0.82rem; color: var(--text-light); margin-top: 0.25rem; }
+
+    /* ── Scanner ─────────────────────────────────────────────────────────── */
+    .scanner-box {
+      border: 3px dashed var(--dhbw-red);
+      border-radius: var(--radius);
+      padding: 2rem;
+      text-align: center;
+      background: #fff8f8;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .scanner-box:hover { background: #fff0f0; }
+    .scanner-icon { font-size: 3rem; margin-bottom: 0.5rem; }
+
+    /* ── Loading Spinner ─────────────────────────────────────────────────── */
+    .spinner {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Notification Log ────────────────────────────────────────────────── */
+    .notification-item {
+      border-left: 4px solid var(--info);
+      padding: 0.75rem 1rem;
+      background: white;
+      border-radius: 0 var(--radius) var(--radius) 0;
+      margin-bottom: 0.75rem;
+    }
+    .notification-item .notif-subject { font-weight: 700; font-size: 0.9rem; }
+    .notification-item .notif-meta { font-size: 0.78rem; color: var(--text-light); margin-top: 0.2rem; }
+    .notification-item .notif-body { font-size: 0.85rem; margin-top: 0.4rem; color: var(--text); }
+
+    /* ── Hero ────────────────────────────────────────────────────────────── */
+    .hero {
+      background: linear-gradient(135deg, var(--dhbw-dark) 0%, #16213e 60%, #0f3460 100%);
+      color: white;
+      padding: 3rem 2rem;
+      border-radius: var(--radius);
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::after {
+      content: '🎫';
+      position: absolute;
+      right: 2rem; top: 50%;
+      transform: translateY(-50%);
+      font-size: 5rem;
+      opacity: 0.15;
+    }
+    .hero h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+    .hero p  { color: rgba(255,255,255,0.7); font-size: 0.95rem; }
+
+    /* ── View helpers ────────────────────────────────────────────────────── */
+    [data-view] { display: none; }
+    [data-view].active { display: block; }
+
+    /* ── Modal ───────────────────────────────────────────────────────────── */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: white;
+      border-radius: var(--radius);
+      padding: 2rem;
+      max-width: 480px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .modal h3 { margin-bottom: 1.25rem; font-size: 1.1rem; }
+    .modal-footer { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.25rem; }
+
+    .text-muted { color: var(--text-light); }
+    .text-center { text-align: center; }
+    .mt-1 { margin-top: 0.5rem; }
+    .mt-2 { margin-top: 1rem; }
+    .mb-1 { margin-bottom: 0.5rem; }
+    .flex { display: flex; }
+    .gap-1 { gap: 0.5rem; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .font-bold { font-weight: 700; }
+    .w-full { width: 100%; }
+    hr { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════
+     NAVIGATION (aus VL4 Angular: Navigation / Menü)
+════════════════════════════════════════════════════════ -->
+<nav>
+  <div class="nav-brand">
+    <div class="logo-box">DH</div>
+    Smart Ticketing
+  </div>
+
+  <div class="nav-links" id="navLinks">
+    <button onclick="showView('events')" class="active" data-nav="events">🎭 Events</button>
+    <button onclick="showView('tickets')" data-nav="tickets" id="btnMyTickets" style="display:none">🎫 Meine Tickets</button>
+    <button onclick="showView('checkin')" data-nav="checkin" id="btnCheckin" style="display:none">✅ Check-in</button>
+    <button onclick="showView('admin')"   data-nav="admin"   id="btnAdmin"   style="display:none">⚙️ Admin</button>
+    <button onclick="showView('notifications')" data-nav="notifications" id="btnNotif" style="display:none">🔔 Log</button>
+  </div>
+
+  <div class="nav-user" id="navUser">
+    <button class="btn btn-ghost btn-sm" onclick="showView('login')">Anmelden</button>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════
+     VIEWS (aus VL4 Angular: SPA Ansichtswechsel)
+════════════════════════════════════════════════════════ -->
+<div class="container">
+
+  <!-- ── LOGIN VIEW ──────────────────────────────────────────────────── -->
+  <div data-view="login" id="view-login">
+    <div class="hero">
+      <h1>🎫 Smart Ticketing System</h1>
+      <p>DHBW Karlsruhe · Fortgeschrittene Informatik · Microservice-Architektur</p>
+    </div>
+
+    <div class="grid-2">
+      <!-- Login -->
+      <div class="card">
+        <h2>🔐 Anmelden</h2>
+        <hr/>
+        <div id="loginAlert"></div>
+        <div class="form-group">
+          <label>E-Mail</label>
+          <input type="email" class="form-control" id="loginEmail" placeholder="visitor@dhbw.de" value="visitor@dhbw.de"/>
+        </div>
+        <div class="form-group">
+          <label>Passwort</label>
+          <input type="password" class="form-control" id="loginPassword" placeholder="Passwort" value="visitor123"/>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="login()" id="btnLogin">Anmelden</button>
+        <p class="text-muted mt-1" style="font-size:0.8rem; text-align:center">
+          Demo: visitor / staff / admin + "123" am Ende
+        </p>
+      </div>
+
+      <!-- Register -->
+      <div class="card">
+        <h2>📝 Registrieren</h2>
+        <hr/>
+        <div id="registerAlert"></div>
+        <div class="form-group">
+          <label>Benutzername</label>
+          <input type="text" class="form-control" id="regUsername" placeholder="Max Mustermann"/>
+        </div>
+        <div class="form-group">
+          <label>E-Mail</label>
+          <input type="email" class="form-control" id="regEmail" placeholder="max@example.com"/>
+        </div>
+        <div class="form-group">
+          <label>Passwort</label>
+          <input type="password" class="form-control" id="regPassword" placeholder="Sicheres Passwort"/>
+        </div>
+        <button class="btn btn-ghost btn-full" onclick="register()">Konto erstellen</button>
+      </div>
+    </div>
+
+    <!-- Demo-Accounts Info -->
+    <div class="card">
+      <h2>👤 Demo-Accounts</h2>
+      <hr/>
+      <div class="grid-3">
+        <div class="stat-card">
+          <div style="font-size:1.5rem">👤</div>
+          <div class="stat-label">Visitor</div>
+          <div style="font-size:0.82rem; color:var(--text); margin-top:0.3rem">visitor@dhbw.de<br>visitor123</div>
+        </div>
+        <div class="stat-card">
+          <div style="font-size:1.5rem">🛂</div>
+          <div class="stat-label">Staff</div>
+          <div style="font-size:0.82rem; color:var(--text); margin-top:0.3rem">staff@dhbw.de<br>staff123</div>
+        </div>
+        <div class="stat-card">
+          <div style="font-size:1.5rem">⚙️</div>
+          <div class="stat-label">Admin</div>
+          <div style="font-size:0.82rem; color:var(--text); margin-top:0.3rem">admin@dhbw.de<br>admin123</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── EVENTS VIEW ─────────────────────────────────────────────────── -->
+  <div data-view="events" id="view-events" class="active">
+    <div class="card">
+      <div class="card-header">
+        <h2>🎭 Verfügbare Events</h2>
+        <button class="btn btn-sm btn-ghost" onclick="loadEvents()">↻ Aktualisieren</button>
+      </div>
+      <div id="eventsAlert"></div>
+      <div id="eventsList">
+        <p class="text-muted text-center">Lade Events…</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MEINE TICKETS ───────────────────────────────────────────────── -->
+  <div data-view="tickets" id="view-tickets">
+    <div class="card">
+      <div class="card-header">
+        <h2>🎫 Meine Tickets</h2>
+        <button class="btn btn-sm btn-ghost" onclick="loadMyTickets()">↻ Aktualisieren</button>
+      </div>
+      <div id="ticketsAlert"></div>
+      <div id="ticketsList">
+        <p class="text-muted text-center">Lade Tickets…</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CHECK-IN VIEW (Staff/Admin) ────────────────────────────────── -->
+  <div data-view="checkin" id="view-checkin">
+    <div class="grid-2">
+      <div class="card">
+        <h2>📷 QR-Code Scanner</h2>
+        <hr/>
+        <div id="scannerAlert"></div>
+        <div class="scanner-box" onclick="document.getElementById('qrInput').focus()">
+          <div class="scanner-icon">📷</div>
+          <p style="font-weight:600">QR-Code hier eingeben</p>
+          <p class="text-muted" style="font-size:0.8rem">Simulierter Scanner – QR-Code aus Ticket einfügen</p>
+        </div>
+        <div class="form-group mt-2">
+          <label>QR-Code (Base64)</label>
+          <input type="text" class="form-control" id="qrInput" placeholder="QR-Code aus Ticket einfügen…"/>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="processCheckin()">✅ Einlass gewähren</button>
+      </div>
+
+      <div class="card">
+        <h2>📊 Einlass-Statistiken</h2>
+        <hr/>
+        <div id="checkinStats">
+          <p class="text-muted text-center">Lade Statistiken…</p>
+        </div>
+        <hr/>
+        <h2>📋 Letzte Check-ins</h2>
+        <div id="checkinList" style="max-height:300px; overflow-y:auto">
+          <p class="text-muted text-center">Noch keine Check-ins</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ADMIN VIEW ──────────────────────────────────────────────────── -->
+  <div data-view="admin" id="view-admin">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('tabAllOrders', this)">📋 Alle Bestellungen</button>
+      <button class="tab-btn" onclick="switchTab('tabCreateEvent', this)">➕ Event erstellen</button>
+      <button class="tab-btn" onclick="switchTab('tabUsers', this)">👥 Nutzer</button>
+    </div>
+
+    <div id="tabAllOrders">
+      <div class="card">
+        <div class="card-header">
+          <h2>📋 Alle Bestellungen</h2>
+          <button class="btn btn-sm btn-ghost" onclick="loadAllOrders()">↻ Aktualisieren</button>
+        </div>
+        <div id="allOrdersList"><p class="text-muted text-center">Lade…</p></div>
+      </div>
+    </div>
+
+    <div id="tabCreateEvent" style="display:none">
+      <div class="card">
+        <h2>➕ Neues Event erstellen</h2>
+        <hr/>
+        <div id="createEventAlert"></div>
+        <div class="form-group">
+          <label>Event-Name</label>
+          <input type="text" class="form-control" id="evName" placeholder="z.B. DHBW Hackathon 2026"/>
+        </div>
+        <div class="form-group">
+          <label>Beschreibung</label>
+          <input type="text" class="form-control" id="evDesc" placeholder="Kurzbeschreibung des Events"/>
+        </div>
+        <div class="form-group">
+          <label>Ort</label>
+          <input type="text" class="form-control" id="evLocation" placeholder="z.B. DHBW Karlsruhe, Aula"/>
+        </div>
+        <div class="form-group">
+          <label>Datum & Uhrzeit</label>
+          <input type="datetime-local" class="form-control" id="evDate"/>
+        </div>
+        <div class="form-group">
+          <label>Kategorie</label>
+          <input type="text" class="form-control" id="evCatName" placeholder="z.B. Standard" value="Standard"/>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Preis (€)</label>
+            <input type="number" class="form-control" id="evPrice" placeholder="0.00" value="0" min="0" step="0.01"/>
+          </div>
+          <div class="form-group">
+            <label>Kontingent</label>
+            <input type="number" class="form-control" id="evTotal" placeholder="100" value="100" min="1"/>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="createEvent()">Event erstellen</button>
+      </div>
+    </div>
+
+    <div id="tabUsers" style="display:none">
+      <div class="card">
+        <div class="card-header">
+          <h2>👥 Alle Nutzer</h2>
+          <button class="btn btn-sm btn-ghost" onclick="loadUsers()">↻ Aktualisieren</button>
+        </div>
+        <div id="usersList"><p class="text-muted text-center">Lade…</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── NOTIFICATIONS VIEW ─────────────────────────────────────────── -->
+  <div data-view="notifications" id="view-notifications">
+    <div class="card">
+      <div class="card-header">
+        <h2>🔔 Simulations-Log (E-Mail / Push)</h2>
+        <button class="btn btn-sm btn-ghost" onclick="loadNotifications()">↻ Aktualisieren</button>
+      </div>
+      <p class="text-muted mb-1" style="font-size:0.85rem">
+        Zeigt alle simulierten Benachrichtigungen die via Kafka-Events ausgelöst wurden.
+      </p>
+      <div id="notificationsList">
+        <p class="text-muted text-center">Lade…</p>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- ═══════════════════════════════════════════════════════
+     BUY TICKET MODAL
+════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="buyModal">
+  <div class="modal">
+    <h3>🎫 Ticket kaufen</h3>
+    <div id="buyAlert"></div>
+    <p id="buyEventName" style="font-weight:700; margin-bottom:0.75rem"></p>
+    <div class="form-group">
+      <label>Kategorie</label>
+      <select class="form-control" id="buyCategory"></select>
+    </div>
+    <div class="form-group">
+      <label>Anzahl</label>
+      <select class="form-control" id="buyQuantity">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+      </select>
+    </div>
+    <p id="buyPricePreview" style="font-weight:600; color:var(--dhbw-red); margin-bottom:0.5rem"></p>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Abbrechen</button>
+      <button class="btn btn-primary" onclick="confirmBuy()" id="btnConfirmBuy">Jetzt bestellen</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     JAVASCRIPT - Angular-ähnliche Komponenten-Logik
+     (aus VL4: Angular Services, HTTP Client, Observables)
+════════════════════════════════════════════════════════ -->
+<script>
+// ── Konfiguration ──────────────────────────────────────────────────────────
+const API = (window.location.hostname.includes('github.dev') ? 'https://' + window.location.hostname.replace('-4200', '-3000') + '/api' : 'http://localhost:3000/api');  // API Gateway (aus VL8)
+
+// ── App State (aus VL4 Angular: Component State) ──────────────────────────
+const state = {
+  token: localStorage.getItem('token') || null,
+  user: JSON.parse(localStorage.getItem('user') || 'null'),
+  currentEvent: null,
+  currentView: 'events',
+};
+
+// ── HTTP Client Wrapper (aus VL4: Angular HttpClient) ──────────────────────
+async function http(method, path, body = null) {
+  const opts = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(state.token ? { 'Authorization': `Bearer ${state.token}` } : {}),
+    },
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(`${API}${path}`, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
+  return data;
+}
+
+// ── Hilfsfunktionen ────────────────────────────────────────────────────────
+function showAlert(id, msg, type = 'danger') {
+  const el = document.getElementById(id);
+  if (el) { el.innerHTML = `<div class="alert alert-${type}">${msg}</div>`; }
+}
+function clearAlert(id) {
+  const el = document.getElementById(id); if (el) el.innerHTML = '';
+}
+function formatDate(iso) {
+  return new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
+}
+function formatPrice(p) {
+  return p === 0 ? 'Kostenlos' : `${p.toFixed(2)} €`;
+}
+function statusBadge(s) {
+  return `<span class="status-badge status-${s}">${s}</span>`;
+}
+function availClass(avail) {
+  if (avail === 0) return 'avail-no';
+  if (avail < 10) return 'avail-low';
+  return 'avail-ok';
+}
+
+// ── Navigation & Views (aus VL4 SPA: Ansichtswechsel) ─────────────────────
+function showView(name) {
+  document.querySelectorAll('[data-view]').forEach(v => v.classList.remove('active'));
+  const v = document.getElementById(`view-${name}`);
+  if (v) v.classList.add('active');
+
+  document.querySelectorAll('[data-nav]').forEach(b => b.classList.remove('active'));
+  const navBtn = document.querySelector(`[data-nav="${name}"]`);
+  if (navBtn) navBtn.classList.add('active');
+
+  state.currentView = name;
+
+  // Lazy-load beim View-Wechsel (aus VL4: Angular Services)
+  if (name === 'events')         loadEvents();
+  if (name === 'tickets')        loadMyTickets();
+  if (name === 'checkin')        { loadCheckins(); loadCheckinStats(); }
+  if (name === 'admin')          loadAllOrders();
+  if (name === 'notifications')  loadNotifications();
+}
+
+function switchTab(tabId, btn) {
+  ['tabAllOrders','tabCreateEvent','tabUsers'].forEach(t => {
+    const el = document.getElementById(t);
+    if (el) el.style.display = 'none';
+  });
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(tabId).style.display = 'block';
+  btn.classList.add('active');
+
+  if (tabId === 'tabAllOrders') loadAllOrders();
+  if (tabId === 'tabUsers')     loadUsers();
+}
+
+// ── Auth (aus VL4: OAuth 2.0, JWT) ─────────────────────────────────────────
+async function login() {
+  clearAlert('loginAlert');
+  const email    = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPassword').value;
+  const btn = document.getElementById('btnLogin');
+  btn.innerHTML = '<span class="spinner"></span> Anmelden…';
+  btn.disabled = true;
+  try {
+    const data = await http('POST', '/auth/login', { email, password });
+    state.token = data.access_token;
+    state.user  = data.user;
+    localStorage.setItem('token', state.token);
+    localStorage.setItem('user', JSON.stringify(state.user));
+    updateNavForUser();
+    showView('events');
+  } catch (err) {
+    showAlert('loginAlert', '❌ ' + err.message);
+  } finally {
+    btn.innerHTML = 'Anmelden';
+    btn.disabled = false;
+  }
+}
+
+async function register() {
+  clearAlert('registerAlert');
+  const username = document.getElementById('regUsername').value;
+  const email    = document.getElementById('regEmail').value;
+  const password = document.getElementById('regPassword').value;
+  try {
+    await http('POST', '/auth/register', { username, email, password, role: 'visitor' });
+    showAlert('registerAlert', '✅ Konto erstellt! Bitte melde dich an.', 'success');
+    document.getElementById('loginEmail').value = email;
+    document.getElementById('loginPassword').value = password;
+  } catch (err) {
+    showAlert('registerAlert', '❌ ' + err.message);
+  }
+}
+
+function logout() {
+  state.token = null;
+  state.user  = null;
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  updateNavForUser();
+  showView('login');
+}
+
+function updateNavForUser() {
+  const navUser = document.getElementById('navUser');
+  const isLoggedIn = !!state.user;
+  const role = state.user?.role;
+
+  // Nav-Buttons ein-/ausblenden
+  document.getElementById('btnMyTickets').style.display = isLoggedIn ? '' : 'none';
+  document.getElementById('btnCheckin').style.display = (isLoggedIn && ['admin','staff'].includes(role)) ? '' : 'none';
+  document.getElementById('btnAdmin').style.display   = (isLoggedIn && role === 'admin') ? '' : 'none';
+  document.getElementById('btnNotif').style.display   = isLoggedIn ? '' : 'none';
+
+  if (isLoggedIn) {
+    navUser.innerHTML = `
+      <span>${state.user.username}</span>
+      <span class="badge-role">${role}</span>
+      <button class="btn btn-ghost btn-sm" onclick="logout()">Abmelden</button>
+    `;
+  } else {
+    navUser.innerHTML = `<button class="btn btn-ghost btn-sm" onclick="showView('login')">Anmelden</button>`;
+  }
+}
+
+// ── Events laden (aus VL4: Angular HttpClient GET) ─────────────────────────
+async function loadEvents() {
+  const container = document.getElementById('eventsList');
+  container.innerHTML = '<p class="text-muted text-center">Lade Events…</p>';
+  try {
+    const events = await http('GET', '/events');
+    if (!events.length) {
+      container.innerHTML = '<p class="text-muted text-center">Keine Events vorhanden.</p>';
+      return;
+    }
+    container.innerHTML = events.map(ev => `
+      <div class="event-card mb-1">
+        <div class="event-date">📅 ${formatDate(ev.date)}</div>
+        <div class="event-name">${ev.name}</div>
+        <div class="event-location">📍 ${ev.location}</div>
+        <p style="font-size:0.85rem; color:var(--text-light); margin-bottom:0.75rem">${ev.description}</p>
+        <table class="categories">
+          <thead>
+            <tr><th>Kategorie</th><th>Preis</th><th>Verfügbar</th><th></th></tr>
+          </thead>
+          <tbody>
+            ${ev.categories.map(cat => `
+              <tr>
+                <td><strong>${cat.name}</strong></td>
+                <td>${formatPrice(cat.price)}</td>
+                <td class="${availClass(cat.available)}">${cat.available} / ${cat.total}</td>
+                <td>
+                  ${state.user ? `
+                    <button class="btn btn-primary btn-sm" onclick='openBuyModal(${JSON.stringify(ev)}, "${cat.name}")'
+                      ${cat.available === 0 ? 'disabled' : ''}>
+                      ${cat.available === 0 ? 'Ausverkauft' : '🎫 Kaufen'}
+                    </button>
+                  ` : `<button class="btn btn-ghost btn-sm" onclick="showView('login')">Anmelden</button>`}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `).join('');
+  } catch (err) {
+    showAlert('eventsAlert', '❌ Events konnten nicht geladen werden: ' + err.message);
+    container.innerHTML = '';
+  }
+}
+
+// ── Ticket kaufen (Modal) ──────────────────────────────────────────────────
+function openBuyModal(event, defaultCat) {
+  state.currentEvent = event;
+  document.getElementById('buyEventName').textContent = event.name;
+  clearAlert('buyAlert');
+
+  const catSelect = document.getElementById('buyCategory');
+  catSelect.innerHTML = event.categories
+    .filter(c => c.available > 0)
+    .map(c => `<option value="${c.name}" data-price="${c.price}">${c.name} – ${formatPrice(c.price)}</option>`)
+    .join('');
+  catSelect.value = defaultCat;
+
+  updateBuyPreview();
+  catSelect.onchange = updateBuyPreview;
+  document.getElementById('buyQuantity').onchange = updateBuyPreview;
+  document.getElementById('buyModal').classList.add('open');
+}
+
+function updateBuyPreview() {
+  const catSelect = document.getElementById('buyCategory');
+  const qty = parseInt(document.getElementById('buyQuantity').value);
+  const price = parseFloat(catSelect.selectedOptions[0]?.dataset.price || 0);
+  const total = price * qty;
+  document.getElementById('buyPricePreview').textContent =
+    total === 0 ? 'Kostenlos' : `Gesamt: ${total.toFixed(2)} €`;
+}
+
+function closeModal() {
+  document.getElementById('buyModal').classList.remove('open');
+}
+
+async function confirmBuy() {
+  clearAlert('buyAlert');
+  const ev  = state.currentEvent;
+  const cat = document.getElementById('buyCategory').value;
+  const qty = parseInt(document.getElementById('buyQuantity').value);
+  const btn = document.getElementById('btnConfirmBuy');
+  btn.innerHTML = '<span class="spinner"></span>';
+  btn.disabled = true;
+
+  try {
+    const order = await http('POST', '/orders', {
+      eventId: ev.id,
+      eventName: ev.name,
+      category: cat,
+      quantity: qty,
+    });
+    closeModal();
+    showView('tickets');
+    showAlert('ticketsAlert', `✅ Bestellung #${order.id} erfolgreich! Jetzt bezahlen, um QR-Code zu erhalten.`, 'success');
+    loadMyTickets();
+  } catch (err) {
+    showAlert('buyAlert', '❌ ' + err.message);
+  } finally {
+    btn.innerHTML = 'Jetzt bestellen';
+    btn.disabled = false;
+  }
+}
+
+// ── Meine Tickets laden ────────────────────────────────────────────────────
+async function loadMyTickets() {
+  const container = document.getElementById('ticketsList');
+  if (!state.user) { container.innerHTML = '<p class="text-muted text-center">Bitte anmelden.</p>'; return; }
+  container.innerHTML = '<p class="text-muted text-center">Lade Tickets…</p>';
+  clearAlert('ticketsAlert');
+
+  try {
+    const orders = await http('GET', '/orders/my');
+    if (!orders.length) {
+      container.innerHTML = '<p class="text-muted text-center">Noch keine Tickets. <a href="#" onclick="showView(\'events\')">Jetzt ein Event buchen!</a></p>';
+      return;
+    }
+    container.innerHTML = orders.map(o => `
+      <div class="card" style="border-left: 4px solid ${o.status==='paid'||o.status==='checked_in' ? 'var(--success)' : 'var(--warning)'}">
+        <div class="flex justify-between items-center mb-1">
+          <div>
+            <span class="font-bold">${o.eventName}</span>
+            <span style="margin-left:0.5rem; color:var(--text-light); font-size:0.85rem">${o.category} × ${o.quantity}</span>
+          </div>
+          <div>${statusBadge(o.status)}</div>
+        </div>
+        <div class="flex gap-1" style="align-items:flex-start; flex-wrap:wrap">
+          <div style="flex:1; min-width:200px">
+            <p style="font-size:0.82rem; color:var(--text-light)">Bestellung #${o.id} · ${formatDate(o.createdAt)}</p>
+            <p style="font-size:0.9rem; font-weight:600; color:var(--dhbw-red)">${formatPrice(o.totalPrice)}</p>
+            <p style="font-size:0.8rem; color:var(--text-light)">Zahlung: ${o.paymentStatus}</p>
+          </div>
+          ${o.paymentStatus === 'completed' ? `
+            <div class="qr-container" style="padding:0.75rem">
+              <p style="font-size:0.75rem; font-weight:600; margin-bottom:0.4rem; color:var(--dhbw-dark)">🔒 QR-Code</p>
+              <div class="qr-box">${o.qrCode}</div>
+              <p style="font-size:0.7rem; color:var(--text-light); margin-top:0.3rem">Am Eingang vorzeigen</p>
+            </div>
+          ` : ''}
+        </div>
+        ${o.paymentStatus === 'pending' ? `
+          <div class="mt-1">
+            <button class="btn btn-success btn-sm" onclick="payOrder(${o.id})">
+              💳 Jetzt bezahlen (Fake Payment)
+            </button>
+          </div>
+        ` : ''}
+      </div>
+    `).join('');
+  } catch (err) {
+    showAlert('ticketsAlert', '❌ ' + err.message);
+    container.innerHTML = '';
+  }
+}
+
+async function payOrder(orderId) {
+  try {
+    const order = await http('POST', `/orders/${orderId}/pay`);
+    showAlert('ticketsAlert', `✅ Zahlung für Bestellung #${order.id} erfolgreich! QR-Code wurde generiert.`, 'success');
+    loadMyTickets();
+  } catch (err) {
+    showAlert('ticketsAlert', '❌ ' + err.message);
+  }
+}
+
+// ── Check-in (Staff/Admin) ─────────────────────────────────────────────────
+async function processCheckin() {
+  clearAlert('scannerAlert');
+  const qrCode = document.getElementById('qrInput').value.trim();
+  if (!qrCode) { showAlert('scannerAlert', '⚠️ Bitte QR-Code eingeben.', 'warning'); return; }
+
+  try {
+    const result = await http('POST', '/checkin', { qrCode });
+    if (result.success) {
+      showAlert('scannerAlert', `✅ Einlass gewährt! Event: "${result.eventName}" · Nutzer #${result.userId}`, 'success');
+    } else {
+      showAlert('scannerAlert', `❌ Einlass verweigert: ${result.reason}`, 'danger');
+    }
+    document.getElementById('qrInput').value = '';
+    loadCheckins();
+    loadCheckinStats();
+  } catch (err) {
+    showAlert('scannerAlert', '❌ ' + err.message);
+  }
+}
+
+async function loadCheckins() {
+  const container = document.getElementById('checkinList');
+  try {
+    const checkins = await http('GET', '/checkin');
+    if (!checkins.length) {
+      container.innerHTML = '<p class="text-muted text-center">Noch keine Check-ins</p>';
+      return;
+    }
+    container.innerHTML = `
+      <table class="data-table">
+        <thead><tr><th>#</th><th>Event</th><th>Nutzer</th><th>Status</th><th>Zeit</th></tr></thead>
+        <tbody>
+          ${checkins.slice().reverse().map(c => `
+            <tr>
+              <td>${c.id}</td>
+              <td>${c.eventName}</td>
+              <td>#${c.userId}</td>
+              <td>${c.success ? '✅ OK' : '❌ ' + (c.reason || 'Fehler')}</td>
+              <td style="font-size:0.78rem">${formatDate(c.checkedInAt)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch (err) {
+    container.innerHTML = '<p class="text-muted text-center">Fehler beim Laden</p>';
+  }
+}
+
+async function loadCheckinStats() {
+  const container = document.getElementById('checkinStats');
+  try {
+    const stats = await http('GET', '/checkin/stats');
+    if (!stats.length) {
+      container.innerHTML = '<p class="text-muted text-center">Noch keine Einlässe</p>';
+      return;
+    }
+    container.innerHTML = `
+      <div class="grid-2" style="gap:0.75rem">
+        ${stats.map(s => `
+          <div class="stat-card">
+            <div class="stat-value">${s.count}</div>
+            <div class="stat-label">Event #${s.eventId}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  } catch (err) {
+    container.innerHTML = '<p class="text-muted">Fehler</p>';
+  }
+}
+
+// ── Admin ──────────────────────────────────────────────────────────────────
+async function loadAllOrders() {
+  const container = document.getElementById('allOrdersList');
+  try {
+    const orders = await http('GET', '/orders');
+    if (!orders.length) {
+      container.innerHTML = '<p class="text-muted text-center">Noch keine Bestellungen</p>';
+      return;
+    }
+    container.innerHTML = `
+      <table class="data-table">
+        <thead><tr><th>#</th><th>Event</th><th>Kategorie</th><th>Nutzer</th><th>Preis</th><th>Status</th><th>Zahlung</th><th>Datum</th></tr></thead>
+        <tbody>
+          ${orders.map(o => `
+            <tr>
+              <td>${o.id}</td>
+              <td>${o.eventName}</td>
+              <td>${o.category} ×${o.quantity}</td>
+              <td>${o.userEmail}</td>
+              <td>${formatPrice(o.totalPrice)}</td>
+              <td>${statusBadge(o.status)}</td>
+              <td><span class="status-badge ${o.paymentStatus==='completed'?'status-paid':'status-pending'}">${o.paymentStatus}</span></td>
+              <td style="font-size:0.78rem">${formatDate(o.createdAt)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch (err) {
+    container.innerHTML = `<p class="text-muted text-center">❌ ${err.message}</p>`;
+  }
+}
+
+async function createEvent() {
+  clearAlert('createEventAlert');
+  const dto = {
+    name: document.getElementById('evName').value,
+    description: document.getElementById('evDesc').value,
+    location: document.getElementById('evLocation').value,
+    date: new Date(document.getElementById('evDate').value).toISOString(),
+    categories: [{
+      name: document.getElementById('evCatName').value,
+      price: parseFloat(document.getElementById('evPrice').value),
+      total: parseInt(document.getElementById('evTotal').value),
+      available: parseInt(document.getElementById('evTotal').value),
+    }],
+  };
+  try {
+    const ev = await http('POST', '/events', dto);
+    showAlert('createEventAlert', `✅ Event "${ev.name}" erfolgreich erstellt!`, 'success');
+  } catch (err) {
+    showAlert('createEventAlert', '❌ ' + err.message);
+  }
+}
+
+async function loadUsers() {
+  const container = document.getElementById('usersList');
+  try {
+    const users = await http('GET', '/auth/users');
+    container.innerHTML = `
+      <table class="data-table">
+        <thead><tr><th>#</th><th>Benutzername</th><th>E-Mail</th><th>Rolle</th></tr></thead>
+        <tbody>
+          ${users.map(u => `
+            <tr>
+              <td>${u.id}</td>
+              <td>${u.username}</td>
+              <td>${u.email}</td>
+              <td><span class="badge-role" style="background:${u.role==='admin'?'#c8102e':u.role==='staff'?'#2980b9':'#27ae60'}">${u.role}</span></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch (err) {
+    container.innerHTML = `<p class="text-muted text-center">❌ ${err.message}</p>`;
+  }
+}
+
+// ── Notifications (Kafka Events Log) ──────────────────────────────────────
+async function loadNotifications() {
+  const container = document.getElementById('notificationsList');
+  try {
+    const notifs = await http('GET', '/notifications');
+    if (!notifs.length) {
+      container.innerHTML = '<p class="text-muted text-center">Noch keine Benachrichtigungen. Ticket kaufen und bezahlen!</p>';
+      return;
+    }
+    container.innerHTML = notifs.slice().reverse().map(n => `
+      <div class="notification-item">
+        <div class="notif-subject">📧 ${n.subject}</div>
+        <div class="notif-meta">An: ${n.recipient} · ${formatDate(n.sentAt)} · Typ: ${n.type}</div>
+        <div class="notif-body">${n.body}</div>
+      </div>
+    `).join('');
+  } catch (err) {
+    container.innerHTML = `<p class="text-muted text-center">❌ ${err.message}</p>`;
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+(function init() {
+  updateNavForUser();
+  if (state.user) {
+    showView('events');
+  } else {
+    showView('login');
+  }
+  // Events immer vorladen
+  loadEvents();
+})();
+</script>
+</body>
+</html>
